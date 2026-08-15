@@ -1,0 +1,18 @@
+{
+  "answer": "Supported answer",
+  "claims": [
+    {
+      "id": "c1",
+      "text": "Claim"
+    }
+  ],
+  "citations": [
+    {
+      "claim_id": "c1",
+      "source": "doc-1",
+      "chunk": "chunk-1"
+    }
+  ],
+  "uncovered_claims": []
+}
+
