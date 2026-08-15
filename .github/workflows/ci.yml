@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install .
+      - run: python scripts/check.py
+      - run: python -m unittest discover -s tests -v
+      - run: rag-quality-bench validate --suite examples/suite.json
+      - run: rag-quality-bench probe --level functional
+      - run: rag-quality-bench demo --output reports/demo.json
+      - run: python -m pip wheel . --no-deps --wheel-dir dist
+
