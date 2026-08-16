@@ -1,0 +1,17 @@
+[build-system]
+requires=["setuptools>=68"]
+build-backend="setuptools.build_meta"
+[project]
+name="file-intake-pipeline"
+version="0.1.0"
+description="Fail-closed synthetic file intake manifest validator"
+readme="README.md"
+requires-python=">=3.11"
+license={text="Apache-2.0"}
+dependencies=[]
+[project.scripts]
+file-intake="file_intake_pipeline:main"
+[tool.setuptools]
+package-dir={""="src"}
+[tool.setuptools.packages.find]
+where=["src"]
