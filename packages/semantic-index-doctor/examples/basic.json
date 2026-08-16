@@ -1,0 +1,20 @@
+{
+  "entries": [
+    {
+      "id": "doc-a",
+      "vector": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": "doc-b",
+      "vector": [
+        0,
+        1
+      ]
+    }
+  ],
+  "expected_dimension": 2
+}
+
