@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "target": "rag-lab",
+  "base": "rag-quality-bench",
+  "baseHeadSha": "b5e0569ba1da7d839f89953a37e09ff60247595f",
+  "sources": [
+    {
+      "repository": "embedding-lab",
+      "prefix": "packages/embedding-lab",
+      "headSha": "27f7faed648e8cd54ac2ef5ce97cb677ef886c49",
+      "treeSha": "bf963d8aa852fb6b6ac4f87af93361b4cd0ac2f9",
+      "ancestor": true,
+      "treeMatch": true
+    },
+    {
+      "repository": "rag-corpus-doctor",
+      "prefix": "packages/rag-corpus-doctor",
+      "headSha": "af90971a140a79d3ca59d5f71bf3b534323f6126",
+      "treeSha": "5b24089ee92f6df7a9fb44d717fb6790924b6bfc",
+      "ancestor": true,
+      "treeMatch": true
+    },
+    {
+      "repository": "hybrid-search-playground",
+      "prefix": "packages/hybrid-search-playground",
+      "headSha": "cd230f0a09468bffb609d6b1fbe86415895e5916",
+      "treeSha": "f4fc312abaaf198a5d7a387302299e0dada3afb8",
+      "ancestor": true,
+      "treeMatch": true
+    },
+    {
+      "repository": "semantic-index-doctor",
+      "prefix": "packages/semantic-index-doctor",
+      "headSha": "c37684267b230d1048f5c185ed5fd21f33716beb",
+      "treeSha": "d4e297a1bbba7fa3f111c4725688b3957915f472",
+      "ancestor": true,
+      "treeMatch": true
+    },
+    {
+      "repository": "data-freshness-monitor",
+      "prefix": "packages/data-freshness-monitor",
+      "headSha": "5c7f83ddd73a5736f13a4fda9505df2f234f9e96",
+      "treeSha": "29eba25831cb0fb806263033e6319f23756e496c",
+      "ancestor": true,
+      "treeMatch": true
+    },
+    {
+      "repository": "dataset-versioner",
+      "prefix": "packages/dataset-versioner",
+      "headSha": "873b4c954bf78f54006f49a6a60fc617c5fa059a",
+      "treeSha": "7f54d6d9b279dc132c6f7e85b709b6f79e250a89",
+      "ancestor": true,
+      "treeMatch": true
+    },
+    {
+      "repository": "file-intake-pipeline",
+      "prefix": "packages/file-intake-pipeline",
+      "headSha": "97dfbf3ba635196d4f87e1ccdaac352637b51a03",
+      "treeSha": "784cc5ef272110bf18a1db5a0d6617ac10869fdf",
+      "ancestor": true,
+      "treeMatch": true
+    },
+    {
+      "repository": "rag-citation-explorer",
+      "prefix": "packages/rag-citation-explorer",
+      "headSha": "14556c8088e4de78d975bac65c585eab422c0b0a",
+      "treeSha": "e7a2a27c8984667df1917952a135d6c54724f40a",
+      "ancestor": true,
+      "treeMatch": true
+    }
+  ],
+  "state": "REHEARSAL_ONLY",
+  "archiveGate": "BLOCKED",
+  "reason": "Tests, compatibility, release, redirect, consumer, rollback, and human gates are not all verified."
+}
