@@ -1,0 +1,32 @@
+{
+  "query": "apple",
+  "documents": [
+    {
+      "id": "a",
+      "text": "red apple",
+      "vector": [
+        1,
+        0
+      ],
+      "query_vector": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": "b",
+      "text": "blue berry",
+      "vector": [
+        0,
+        1
+      ],
+      "query_vector": [
+        1,
+        0
+      ]
+    }
+  ],
+  "alpha": 0.5,
+  "limit": 2
+}
+
