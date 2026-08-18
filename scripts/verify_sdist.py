@@ -12,6 +12,7 @@ import tempfile
 
 
 REQUIRED_SUFFIXES = {
+    "/.github/workflows/ci.yml",
     "/examples/suite.json",
     "/tests/fixtures.py",
     "/requirements-build.txt",
