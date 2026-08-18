@@ -2,6 +2,7 @@ include AI_ASSISTANCE.md
 include CHANGELOG.md
 include CONTRIBUTING.md
 include LICENSE
+include MIGRATION-0.3.md
 include README.md
 include SECURITY.md
 include requirements-build.txt
