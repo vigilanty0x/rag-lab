@@ -1,6 +1,10 @@
-# RAG Quality Bench
+# RAG Lab
 
-RAG Quality Bench is a dependency-free, offline evaluation laboratory for retrieval-augmented generation systems. It compares four reproducible retrieval strategies, scores answer and ranking quality, records a content-bound index manifest, sweeps bounded configurations, and produces verifiable JSON plus human-readable Markdown or HTML evidence.
+RAG Lab is a dependency-free, offline evaluation laboratory for retrieval-augmented generation systems. It compares reproducible retrieval strategies, scores answer and ranking quality, records content-bound index manifests, sweeps bounded configurations, and produces verifiable JSON plus human-readable Markdown or HTML evidence.
+
+The proven `rag-quality-bench` engine remains the compatibility distribution and CLI. New integrations should use **RAG Lab** as the product identity, `import rag_lab` as the canonical Python namespace, and `rag-lab` as the canonical CLI.
+
+**0.3.0 is PREPARED, not published.** Normal CI has no tag, release or package-publish step. See [Migration to 0.3](MIGRATION-0.3.md) for compatibility and rollback.
 
 It keeps the complete trace from source contract to chunk, retrieval rank, claim, citation, and verdict. Invalid, expired, blocked, future-dated, or hash-mismatched sources are rejected fail-closed. Individual failures remain visible instead of disappearing behind aggregate scores.
 
@@ -8,13 +12,27 @@ It keeps the complete trace from source contract to chunk, retrieval rank, claim
 
 ```bash
 python -m pip install .
-rag-quality-bench validate --suite examples/suite.json
-rag-quality-bench run --suite examples/suite.json --output reports/demo.json
-rag-quality-bench verify --report reports/demo.json
-rag-quality-bench index --suite examples/suite.json --strategy hybrid --output reports/index.json
-rag-quality-bench sweep --suite examples/suite.json --strategies overlap,bm25,tfidf,hybrid --chunk-sizes 12,20 --overlaps 0,2 --output reports/sweep.json
-rag-quality-bench export --report reports/demo.json --format html --output reports/demo.html
+rag-lab validate --suite examples/suite.json
+rag-lab run --suite examples/suite.json --output reports/demo.json
+rag-lab verify --report reports/demo.json
+rag-lab index --suite examples/suite.json --strategy hybrid --output reports/index.json
+rag-lab sweep --suite examples/suite.json --strategies overlap,bm25,tfidf,hybrid --chunk-sizes 12,20 --overlaps 0,2 --output reports/sweep.json
+rag-lab export --report reports/demo.json --format html --output reports/demo.html
+rag-lab probe --level functional
+```
+
+Historical automation remains valid:
+
+```bash
 rag-quality-bench probe --level functional
+python -c "import rag_quality_bench; print(rag_quality_bench.__version__)"
+```
+
+Canonical Python use:
+
+```python
+import rag_lab
+print(rag_lab.__version__)
 ```
 
 The example is synthetic and runs without a model account, network request, private corpus, or vector database.
@@ -44,6 +62,8 @@ All strategies run locally with no model, service, embedding endpoint, or hidden
 
 ## Commands
 
+Both `rag-lab` and the legacy `rag-quality-bench` expose the same command surface:
+
 - `validate`: validate the bounded versioned suite contract.
 - `inventory`: show freshness, trust, hash status, and duplicate content.
 - `run`: evaluate every question and optionally write an atomic verified report.
@@ -57,6 +77,18 @@ All strategies run locally with no model, service, embedding endpoint, or hidden
 
 Use `--minimum-pass-rate` with `run` to make CI fail when the report falls below an explicit gate.
 
+## Release evidence
+
+Flagship CI runs the root product on Ubuntu, Windows and macOS across CPython 3.11, 3.12 and 3.13. Every job builds wheel + sdist with the pinned build toolchain, installs the wheel, runs the full suite and functional counter-proof, smokes the installed CLI outside checkout, and executes the tests from the extracted sdist.
+
+The release-evidence builder emits:
+
+- `SHA256SUMS.txt` for wheel and sdist;
+- CycloneDX 1.6 `rag-lab.cdx.json` with the distribution identity and hashes;
+- `RELEASE_EVIDENCE.json` with source/runtime/platform metadata and explicit booleans showing the candidate is not tagged, published or released.
+
+A separate manual-only workflow can generate and strictly verify GitHub/Sigstore SLSA provenance for an approved wheel. It uploads evidence but does not create a tag or GitHub Release. Publication and post-publication verification remain separate decisions.
+
 ## Public boundary
 
 Only generic implementation code and synthetic `example.invalid` fixtures belong here. Do not add client names, private documents, credentials, internal topology, production URLs, or proprietary evaluation data. Index manifests intentionally contain source identifiers and hashes, so review those identifiers before publication. See [SECURITY.md](SECURITY.md), [docs/METHODOLOGY.md](docs/METHODOLOGY.md), and [AI_ASSISTANCE.md](AI_ASSISTANCE.md).
@@ -69,8 +101,15 @@ PYTHONPATH=src python scripts/check.py
 python -m pip install --upgrade -r requirements-build.txt
 python -m pip wheel . --no-deps --no-build-isolation --wheel-dir dist
 python -c 'from setuptools.build_meta import build_sdist; print(build_sdist("dist"))'
+python scripts/build_release_evidence.py --dist dist --output release-evidence
 ```
 
-`requirements-build.txt` is the authoritative release toolchain. CI attests those exact versions before creating artifacts, installs the built wheel rather than the checkout, and executes the included tests from the sdist.
+`requirements-build.txt` is the authoritative release toolchain. CI attests those exact versions before creating artifacts. The wheel is tested as the installed candidate rather than relying on imports from the checkout, and the complete source distribution is extracted and tested independently.
+
+## Compatibility and rollback
+
+The distribution name remains `rag-quality-bench` in 0.3 specifically to protect existing installation automation. Canonical and legacy Python namespaces/CLIs are tested together. Removing a historical alias requires a later migration with consumer evidence.
+
+Rollback is documented in [MIGRATION-0.3.md](MIGRATION-0.3.md) and returns to the verified 0.2.0 artifact; 0.3 introduces no database or remote-state migration.
 
 Licensed under Apache-2.0.
