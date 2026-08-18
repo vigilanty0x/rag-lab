@@ -16,7 +16,10 @@ REQUIRED_SUFFIXES = {
     "/tests/fixtures.py",
     "/requirements-build.txt",
     "/MIGRATION-0.3.md",
+    "/release-policy.v1.json",
+    "/docs/RELEASE.md",
     "/scripts/build_release_evidence.py",
+    "/scripts/check_release_policy.py",
 }
 
 
@@ -48,6 +51,12 @@ def verify_sdist(archive: Path) -> None:
         env["PYTHONPATH"] = str(root / "src")
         subprocess.run(
             [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
+            cwd=root,
+            env=env,
+            check=True,
+        )
+        subprocess.run(
+            [sys.executable, "scripts/check_release_policy.py"],
             cwd=root,
             env=env,
             check=True,
