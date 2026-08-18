@@ -1,0 +1,11 @@
+{
+  "datasets": [
+    {
+      "id": "sample",
+      "observed_at": "2026-01-01T00:30:00Z",
+      "max_age_seconds": 3600
+    }
+  ],
+  "now": "2026-01-01T01:00:00Z"
+}
+

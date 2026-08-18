@@ -1,0 +1,6 @@
+{
+  "answer": "The artifact digest is abc123.",
+  "claims": [{"id": "c1", "text": "artifact digest abc123"}],
+  "sources": [{"source_id": "doc-1", "chunks": [{"chunk_id": "chunk-1", "text": "The release artifact digest is abc123 and the tests passed.", "sha256": "4a458a762ca81052975775e3c8809e9854a5b4f2199f8699f0d76c5733f7e31b"}]}],
+  "citations": [{"claim_id": "c1", "source_id": "doc-1", "chunk_id": "chunk-1", "quote": "release artifact digest is abc123", "start": 4, "end": 37}]
+}

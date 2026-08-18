@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-quality-bench"
-version = "0.2.0"
-description = "Deterministic offline RAG evaluation, retrieval experiments, evidence reports, and index manifests."
+version = "0.3.0"
+description = "RAG Lab: deterministic offline RAG evaluation, retrieval experiments, evidence reports, and index manifests."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -14,10 +14,14 @@ authors = [{name = "vigilanty0x"}]
 dependencies = []
 classifiers = [
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Operating System :: OS Independent",
 ]
 
 [project.scripts]
+rag-lab = "rag_quality_bench.cli:main"
 rag-quality-bench = "rag_quality_bench.cli:main"
 
 [tool.setuptools]

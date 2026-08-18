@@ -1,9 +1,12 @@
+include .github/workflows/ci.yml
 include AI_ASSISTANCE.md
 include CHANGELOG.md
 include CONTRIBUTING.md
 include LICENSE
+include MIGRATION-0.3.md
 include README.md
 include SECURITY.md
+include release-policy.v1.json
 include requirements-build.txt
 recursive-include docs *.md
 recursive-include examples *.json

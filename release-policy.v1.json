@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "repository": "vigilanty0x/rag-lab",
+  "product": "RAG Lab",
+  "distribution": "rag-quality-bench",
+  "version": "0.3.0",
+  "proposed_tag": "v0.3.0",
+  "state": "PREPARED",
+  "publish_enabled": false,
+  "rollback_version": "0.2.0",
+  "requires": [
+    "multi_os_runtime_ci",
+    "wheel_and_sdist",
+    "installed_artifact_smoke",
+    "functional_counterproof",
+    "sha256_checksums",
+    "cyclonedx_sbom",
+    "verified_slsa_provenance",
+    "consumer_compatibility",
+    "explicit_publication_decision",
+    "post_publication_verification"
+  ]
+}
