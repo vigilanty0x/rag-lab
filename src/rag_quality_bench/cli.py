@@ -47,7 +47,7 @@ def _print(value: Any) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="rag-quality-bench")
+    parser = argparse.ArgumentParser(prog="rag-lab")
     commands = parser.add_subparsers(dest="command", required=True)
     validate = commands.add_parser("validate", help="validate a versioned benchmark suite")
     validate.add_argument("--suite", required=True)
