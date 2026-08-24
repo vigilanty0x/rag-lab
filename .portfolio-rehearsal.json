@@ -3,6 +3,7 @@
   "target": "rag-lab",
   "base": "rag-quality-bench",
   "baseHeadSha": "b5e0569ba1da7d839f89953a37e09ff60247595f",
+  "mergeCommitSha": "f7e6c1952635f16b47a0078462af38acc3ea6a91",
   "sources": [
     {
       "repository": "embedding-lab",
@@ -69,7 +70,7 @@
       "treeMatch": true
     }
   ],
-  "state": "REHEARSAL_ONLY",
+  "state": "MERGED",
   "archiveGate": "BLOCKED",
-  "reason": "Tests, compatibility, release, redirect, consumer, rollback, and human gates are not all verified."
+  "reason": "The consolidation is already merged at mergeCommitSha. Publication, post-publication verification, consumer/redirect/rollback closure, and explicit human archive approval remain separate blocked gates."
 }
