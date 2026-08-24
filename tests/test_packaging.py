@@ -24,6 +24,7 @@ class PackagingContractTests(unittest.TestCase):
     def test_sdist_manifest_contains_release_evidence_and_fixtures(self):
         manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
         for expected in (
+            "include .portfolio-rehearsal.json",
             "include requirements-build.txt",
             "recursive-include examples *.json",
             "recursive-include scripts *.py",
