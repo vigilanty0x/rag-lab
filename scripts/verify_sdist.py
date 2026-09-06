@@ -16,6 +16,7 @@ REQUIRED_SUFFIXES = {
     "/examples/suite.json",
     "/tests/fixtures.py",
     "/requirements-build.txt",
+    "/requirements-test.lock",
     "/MIGRATION-0.3.md",
     "/release-policy.v1.json",
     "/docs/RELEASE.md",
@@ -54,6 +55,12 @@ def verify_sdist(archive: Path) -> None:
             [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
             cwd=root,
             env=env,
+            check=True,
+        )
+        subprocess.run(
+            [sys.executable, "-m", "pytest", "-q", "tests"],
+            cwd=root,
+            env={**env, "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"},
             check=True,
         )
         subprocess.run(

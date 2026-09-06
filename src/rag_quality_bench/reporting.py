@@ -347,10 +347,15 @@ def _verify_new_report(report: dict[str, Any]) -> bool:
                 or hashlib.sha256(row["text"].encode("utf-8")).hexdigest() != manifest_chunk["text_sha256"]
             ):
                 return False
-            if any(not _number(row.get(key), minimum=0.0) for key in ("score", "lexical_score", "vector_score")):
-                return False
-            if row["score"] <= 0:
-                return False
+            if metrics["retrieval_strategy"] == "supplied":
+                if (not _number(row.get("lexical_score"), minimum=0.0, maximum=1.0)
+                    or any(not _number(row.get(key), minimum=-1.0, maximum=1.0) for key in ("score", "vector_score"))):
+                    return False
+            else:
+                if any(not _number(row.get(key), minimum=0.0) for key in ("score", "lexical_score", "vector_score")):
+                    return False
+                if row["score"] <= 0:
+                    return False
             current_score = float(row["score"])
             if previous_score is not None and current_score > previous_score:
                 return False
@@ -573,6 +578,8 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
         ]
     )
+    if metrics.get("retrieval_strategy") == "supplied":
+        lines.extend(["Supplied vectors: model/version/provenance are caller-declared; origin is not verified. No model/provider was called. Signed scores are ranks, not answer confidence.", ""])
     return "\n".join(lines)
 
 
@@ -607,6 +614,8 @@ def render_html(report: dict[str, Any]) -> str:
         )
         for record in report.get("records", [])
     )
+    vector_notice = ('<p class="meta">Supplied vectors: model/version/provenance are caller-declared; origin is not verified. No model/provider was called. Signed scores are ranks, not answer confidence.</p>'
+                     if metrics.get("retrieval_strategy") == "supplied" else "")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RAG Quality Bench - {escape(str(report.get('suite_id', 'report')))}</title>
@@ -621,7 +630,7 @@ table{{width:100%;border-collapse:collapse;background:var(--panel);border-radius
 <p class="meta">OFFLINE · DETERMINISTIC · EVIDENCE FIRST</p><h1>RAG Quality Bench</h1>
 <p>Suite <strong>{escape(str(report.get('suite_id')))}</strong> · retrieval <strong>{escape(str(metrics.get('retrieval_strategy')))}</strong></p>
 <p class="meta">Semantic SHA-256 <code>{escape(str(report.get('semantic_sha256')))}</code></p>
-<div class="grid">{cards}</div>
+{vector_notice}<div class="grid">{cards}</div>
 <h2>Question outcomes</h2><table><thead><tr><th>Question</th><th>Verdict</th><th>Recall</th><th>nDCG</th><th>Failures</th></tr></thead><tbody>{rows}</tbody></table>
 <p class="meta">Failed and adversarial cases are preserved. Results apply only to this versioned suite.</p>
 </main></body></html>"""

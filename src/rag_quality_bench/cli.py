@@ -16,6 +16,9 @@ from .models import BenchmarkSuite, ContractError, MAX_SUITE_BYTES
 from .probes import functional_probe, liveness_probe, readiness_probe
 from .reporting import export_report, load_report, write_report
 from .retrieval import RetrievalError, load_manifest, write_manifest
+from .workflow import run_workflow, verify_workflow
+from .supplied_vectors import load_vectors
+from .file_intake import load_intake
 
 
 def _suite_from_stream(stream: BinaryIO, *, label: str) -> BenchmarkSuite:
@@ -37,7 +40,7 @@ def _load_suite(path: str) -> BenchmarkSuite:
 
 
 def _load_demo_suite() -> BenchmarkSuite:
-    resource = files("rag_quality_bench").joinpath("data", "suite.json")
+    resource = files("rag_quality_bench").joinpath("fixtures", "suite.json")
     with resource.open("rb") as stream:
         return _suite_from_stream(stream, label="bundled demo suite")
 
@@ -49,13 +52,31 @@ def _print(value: Any) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="rag-lab")
     commands = parser.add_subparsers(dest="command", required=True)
+    workflow = commands.add_parser("workflow", help="query an explicit corpus and preserve bound quality/citation evidence")
+    workflow.add_argument("--suite", required=True)
+    workflow.add_argument("--previous-suite", help="explicit previous corpus version for a content-bound diff")
+    workflow.add_argument("--vectors", help="explicit supplied vectors JSON; requires suite strategy supplied")
+    workflow.add_argument("--query", required=True)
+    workflow.add_argument("--intake", help="explicit file manifest replacing all inline documents")
+    workflow.add_argument("--input-root", help="bounded root for the exact intake list")
+    workflow.add_argument("--output", required=True)
+    workflow.add_argument("--limit", type=int)
+    workflow.add_argument("--minimum-pass-rate", type=float, default=1.0)
+    replay = commands.add_parser("verify-workflow", help="replay a workflow against its explicitly supplied corpus")
+    replay.add_argument("--suite", required=True)
+    replay.add_argument("--previous-suite")
+    replay.add_argument("--output", required=True)
+    replay.add_argument("--intake")
+    replay.add_argument("--input-root")
+    replay.add_argument("--vectors", help="same explicit vectors JSON required for supplied replay")
     validate = commands.add_parser("validate", help="validate a versioned benchmark suite")
     validate.add_argument("--suite", required=True)
     run = commands.add_parser("run", help="run a benchmark and preserve all failures")
     run.add_argument("--suite", required=True)
     run.add_argument("--output")
+    run.add_argument("--vectors")
     run.add_argument("--minimum-pass-rate", type=float)
-    run.add_argument("--strategy", choices=["overlap", "bm25", "tfidf", "hybrid"])
+    run.add_argument("--strategy", choices=["overlap", "bm25", "tfidf", "hybrid", "supplied"])
     verify = commands.add_parser("verify", help="verify a written report")
     verify.add_argument("--report", required=True)
     compare = commands.add_parser("compare", help="diff two verified reports")
@@ -70,8 +91,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     index = commands.add_parser("index", help="write a redacted, content-bound index manifest")
     index.add_argument("--suite", required=True)
-    index.add_argument("--strategy", choices=["overlap", "bm25", "tfidf", "hybrid"])
+    index.add_argument("--strategy", choices=["overlap", "bm25", "tfidf", "hybrid", "supplied"])
     index.add_argument("--output", required=True)
+    index.add_argument("--vectors")
     verify_index = commands.add_parser("verify-index", help="verify an index manifest self-hash")
     verify_index.add_argument("--manifest", required=True)
 
@@ -107,6 +129,21 @@ def _csv_ints(value: str, label: str) -> list[int]:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        if args.command == "workflow":
+            receipt = run_workflow(_load_suite(args.suite), query=args.query, output=args.output,
+                                   minimum_pass_rate=args.minimum_pass_rate, limit=args.limit,
+                                   previous_suite=_load_suite(args.previous_suite) if args.previous_suite else None,
+                                   vectors=load_vectors(args.vectors) if args.vectors else None,
+                                   root=args.input_root, intake=load_intake(args.intake) if args.intake else None)
+            _print(receipt)
+            return 0 if receipt["status"] == "completed" else 1
+        if args.command == "verify-workflow":
+            receipt = verify_workflow(args.output, _load_suite(args.suite),
+                                      previous_suite=_load_suite(args.previous_suite) if args.previous_suite else None,
+                                   vectors=load_vectors(args.vectors) if args.vectors else None,
+                                   root=args.input_root, intake=load_intake(args.intake) if args.intake else None)
+            _print({"valid": True, "receipt_sha256": receipt["receipt_sha256"], "status": receipt["status"]})
+            return 0
         if args.command == "validate":
             suite = _load_suite(args.suite)
             _print({
@@ -124,7 +161,7 @@ def main(argv: list[str] | None = None) -> int:
             suite = _load_suite(args.suite)
             if args.strategy:
                 suite = replace(suite, retrieval_strategy=args.strategy)
-            report = BenchmarkEngine(suite).run()
+            report = BenchmarkEngine(suite, vectors=load_vectors(args.vectors) if args.vectors else None).run()
             if args.output:
                 write_report(args.output, report)
             _print(report)
@@ -162,7 +199,7 @@ def main(argv: list[str] | None = None) -> int:
             suite = _load_suite(args.suite)
             if args.strategy:
                 suite = replace(suite, retrieval_strategy=args.strategy)
-            manifest = BenchmarkEngine(suite).index_manifest()
+            manifest = BenchmarkEngine(suite, vectors=load_vectors(args.vectors) if args.vectors else None).index_manifest()
             write_manifest(args.output, manifest)
             _print({"valid": True, "output": args.output, **manifest})
             return 0

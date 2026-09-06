@@ -14,6 +14,7 @@ import tempfile
 from typing import Any, Iterable
 
 from .models import RETRIEVAL_STRATEGIES, canonical_sha256
+from .supplied_vectors import SuppliedVectors, supplied_score, validate_vectors, verify_vector_metadata
 
 TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
 VECTOR_DIMENSIONS = 128
@@ -69,7 +70,7 @@ class RankedChunk:
 class RetrievalIndex:
     """A bounded in-memory index for transparent local strategies."""
 
-    def __init__(self, chunks: Iterable[Any], *, strategy: str = "overlap", hybrid_weight: float = 0.5):
+    def __init__(self, chunks: Iterable[Any], *, strategy: str = "overlap", hybrid_weight: float = 0.5, vectors: SuppliedVectors | None = None):
         bounded: list[Any] = []
         for chunk in chunks:
             if len(bounded) >= MAX_INDEX_CHUNKS:
@@ -90,6 +91,13 @@ class RetrievalIndex:
         identifiers = [chunk.chunk_id for chunk in self.chunks]
         if len(identifiers) != len(set(identifiers)):
             raise RetrievalError("chunk IDs must be unique")
+        self.vectors = None
+        if strategy == "supplied":
+            if not isinstance(vectors, SuppliedVectors):
+                raise RetrievalError("supplied strategy requires validated vectors")
+            self.vectors = validate_vectors(vectors, suite_sha256=vectors.to_dict()["suite_sha256"], chunks=self.chunks)
+        elif vectors is not None:
+            raise RetrievalError("vectors are only allowed with supplied strategy")
         self.strategy = strategy
         self.hybrid_weight = float(hybrid_weight)
         self._tokens = {chunk.chunk_id: _tokenize(chunk.text) for chunk in self.chunks}
@@ -155,6 +163,10 @@ class RetrievalIndex:
         return max(0.0, _cosine(query, self._hash_vectors[chunk_id]))
 
     def score(self, query: str, chunk: Any) -> RankedChunk:
+        if self.vectors is not None:
+            score, lexical, vector = supplied_score(query, chunk.text, self.vectors.query(query),
+                                                     self.vectors.chunks[chunk.chunk_id], self.hybrid_weight)
+            return RankedChunk(chunk, score, lexical, vector)
         tokens = _tokenize(query)
         if self.strategy == "overlap":
             lexical = self._overlap(tokens, chunk.chunk_id)
@@ -175,9 +187,11 @@ class RetrievalIndex:
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 1000:
             raise RetrievalError("limit must be an integer from 1 to 1000")
         ranked = sorted((self.score(query, chunk) for chunk in self.chunks), key=lambda row: (-row.score, row.chunk.chunk_id))
-        return tuple(row for row in ranked[:limit] if row.score > 0)
+        return tuple(row for row in ranked[:limit] if self.vectors is not None or row.score > 0)
 
     def manifest(self, *, suite_sha256: str, chunk_size: int, chunk_overlap: int) -> dict[str, Any]:
+        if self.vectors is not None and suite_sha256 != self.vectors.to_dict()["suite_sha256"]:
+            raise RetrievalError("vector manifest suite identity mismatch")
         chunks = [
             {
                 "chunk_id": chunk.chunk_id,
@@ -199,6 +213,8 @@ class RetrievalIndex:
             "chunk_count": len(chunks),
             "chunks": chunks,
         }
+        if self.vectors is not None:
+            unsigned.update(index_version="2.0", vectors=self.vectors.metadata())
         return {**unsigned, "manifest_sha256": canonical_sha256(unsigned)}
 
 
@@ -209,7 +225,12 @@ def verify_manifest(manifest: Any) -> bool:
         "index_version", "suite_sha256", "strategy", "hybrid_weight", "chunk_size",
         "chunk_overlap", "chunk_count", "chunks", "manifest_sha256",
     }
-    if set(manifest) != expected or manifest.get("index_version") != "1.0":
+    supplied = manifest.get("strategy") == "supplied"
+    if supplied:
+        expected.add("vectors")
+        if not verify_vector_metadata(manifest.get("vectors")):
+            return False
+    if set(manifest) != expected or manifest.get("index_version") != ("2.0" if supplied else "1.0"):
         return False
     if manifest.get("strategy") not in RETRIEVAL_STRATEGIES:
         return False
@@ -232,6 +253,8 @@ def verify_manifest(manifest: Any) -> bool:
     if isinstance(overlap, bool) or not isinstance(overlap, int) or not 0 <= overlap < size:
         return False
     if isinstance(count, bool) or not isinstance(count, int) or not 0 <= count <= MAX_INDEX_CHUNKS:
+        return False
+    if supplied and not 1 <= count <= 10_000:
         return False
     chunks = manifest.get("chunks")
     if not isinstance(chunks, list) or len(chunks) != count:
