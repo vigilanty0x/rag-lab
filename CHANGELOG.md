@@ -1,10 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Build and test every imported package on CPython 3.11 and 3.12 in hosted CI, including each package's own unit suite and repository checks.
+- Require the imported-package matrix to pass before candidate attestation can run.
+
 ## 0.3.0 - 2026-08-18
 
 - Make **RAG Lab** the canonical product identity while preserving the released `rag-quality-bench` distribution and CLI as compatibility surfaces.
 - Add canonical `rag_lab` Python namespace, `python -m rag_lab`, and `rag-lab` CLI; all canonical and legacy surfaces report version `0.3.0`.
-- Expand flagship CI to Ubuntu, Windows, and macOS across CPython 3.11, 3.12, and 3.13.
+- Expand flagship CI to Ubuntu, Windows, and macOS across CPython 3.11 through 3.14.
 - Build wheel and sdist on every matrix job, install the built wheel, smoke the installed CLI outside the checkout, run the functional counter-proof, and test the complete sdist.
 - Generate bounded release evidence with SHA-256 checksums, CycloneDX 1.6 SBOM, platform/runtime metadata, and an explicit `PREPARED` state that cannot be mistaken for publication.
 - Add a manual-only provenance workflow that rebuilds an approved candidate, verifies it, generates release evidence, signs the wheel with GitHub/Sigstore SLSA provenance, strictly verifies the attestation, and uploads the candidate bundle without creating a tag or release.
