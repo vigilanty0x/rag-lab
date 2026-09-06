@@ -1,5 +1,17 @@
 # RAG Lab
 
+## One concrete project, 10 tools
+
+RAG Lab is the single repository for the complete retrieval and corpus-quality
+tool family. The canonical RAG Lab product and its Rag Quality Bench
+compatibility identity live at the root. Eight focused tools live under
+`packages/`: freshness, dataset versioning, embeddings, intake, hybrid search,
+citations, corpus diagnosis, and semantic-index diagnosis.
+
+`MONOREPO.json` records all 10 former repository identities, their preserved
+source commits and trees, and their destination paths. CI checks this inventory
+while source-repository deletion remains explicitly unauthorized.
+
 Use an explicit local file list through `workflow --intake --input-root` to
 replace the suite's inline documents with measured UTF-8 bytes. Paths, declared
 hashes, dates and replay are checked; no directories are scanned or sources

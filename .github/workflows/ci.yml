@@ -45,6 +45,8 @@ jobs:
         run: python -c "import glob,subprocess,sys; wheel=glob.glob('dist/*.whl'); assert len(wheel)==1, wheel; subprocess.check_call([sys.executable,'-m','pip','install','--no-deps','--force-reinstall',wheel[0]])"
       - name: Static/public boundary checks
         run: python scripts/check.py
+      - name: Verify the 10-tool monorepo map
+        run: python scripts/check_monorepo.py
       - name: Verify release publication remains disabled
         run: python scripts/check_release_policy.py
       - name: Unit tests against installed candidate
