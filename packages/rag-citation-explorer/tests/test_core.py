@@ -1,5 +1,5 @@
 import hashlib
-import json
+
 import unittest
 
 from rag_citation_explorer import evaluate

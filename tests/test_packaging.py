@@ -35,7 +35,7 @@ class PackagingContractTests(unittest.TestCase):
     def test_bundled_demo_matches_the_public_example_semantically(self):
         public = json.loads((ROOT / "examples" / "suite.json").read_text(encoding="utf-8"))
         bundled = json.loads(
-            (ROOT / "src" / "rag_quality_bench" / "data" / "suite.json").read_text(encoding="utf-8")
+            (ROOT / "src" / "rag_quality_bench" / "fixtures" / "suite.json").read_text(encoding="utf-8")
         )
         self.assertEqual(public, bundled)
 
