@@ -266,11 +266,13 @@ def test_windows_directory_rename_is_blocked_during_actual_read(tmp_path,monkeyp
 @pytest.mark.skipif(os.name!='nt',reason='Windows junction semantics')
 @pytest.mark.parametrize('place',['root','subdir'])
 def test_actual_windows_junction_is_refused(tmp_path,place):
-    import _winapi
+    import _winapi, stat
     from rag_quality_bench.file_intake import prepare_file_suite
     template,root,manifest,_=file_fixture(tmp_path);link=tmp_path/'junction'
     _winapi.CreateJunction(str(root),str(link))
-    assert link.is_junction()
+    metadata=link.lstat()
+    assert metadata.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+    assert metadata.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
     if place=='root':root=link
     else:root=tmp_path;manifest['files'][0]['name']='junction/handbook.txt'
     with pytest.raises(ContractError,match='NON_REGULAR_OR_LINKED'):
