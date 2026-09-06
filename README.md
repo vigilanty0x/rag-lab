@@ -103,7 +103,7 @@ Use `--minimum-pass-rate` with `run` to make CI fail when the report falls below
 
 ## Release evidence
 
-Flagship CI runs the root product on Ubuntu, Windows and macOS across CPython 3.11, 3.12 and 3.13. Every job builds wheel + sdist with the pinned build toolchain, installs the wheel, runs the full suite and functional counter-proof, smokes the installed CLI outside checkout, and executes the tests from the extracted sdist.
+Flagship CI runs the root product on Ubuntu, Windows and macOS across CPython 3.11 through 3.14. A separate Ubuntu matrix builds the wheel and runs the unit suite plus repository checks for each of the eight imported packages on its supported CPython 3.11 and 3.12 versions. Every root job builds wheel + sdist with the pinned build toolchain, installs the wheel, runs the full suite and functional counter-proof, smokes the installed CLI outside checkout, and executes the tests from the extracted sdist. Candidate attestation waits for both matrices.
 
 The release-evidence builder emits:
 
