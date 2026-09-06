@@ -10,7 +10,7 @@ from rag_quality_bench.engine import (
     retrieval_score,
     tokenize,
 )
-from rag_quality_bench.models import BenchmarkSuite, Document, content_sha256
+from rag_quality_bench.models import BenchmarkSuite, content_sha256
 from rag_quality_bench.retrieval import RetrievalError
 
 
