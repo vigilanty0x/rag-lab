@@ -9,8 +9,9 @@ import time
 from typing import Any, Callable
 
 from .metrics import bootstrap_mean_ci, citation_scores, ndcg_at_k, precision_at_k, reciprocal_rank
-from .models import BenchmarkSuite, Claim, Document, canonical_sha256
+from .models import BenchmarkSuite, Claim, ContractError, Document, MAX_TEXT_CHARS, canonical_sha256, content_sha256
 from .retrieval import MAX_INDEX_CHUNKS, RetrievalError, RetrievalIndex, verify_manifest
+from .supplied_vectors import validate_vectors
 
 
 TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
@@ -92,9 +93,16 @@ def claim_support(claim: Claim, documents: dict[str, Document]) -> tuple[bool, f
 
 
 class BenchmarkEngine:
-    def __init__(self, suite: BenchmarkSuite, *, clock: Callable[[], int] | None = None):
+    def __init__(self, suite: BenchmarkSuite, *, clock: Callable[[], int] | None = None, vectors=None):
         self.suite = suite
         self.clock = clock or time.perf_counter_ns
+        self.vectors = None
+        if suite.retrieval_strategy == "supplied":
+            valid = {d.source_id: d for d in suite.documents if not d.validation_errors(suite.evaluation_date)}
+            self.vectors = validate_vectors(vectors, suite_sha256=suite.digest, chunks=self._index(valid),
+                                            queries=[q.text for q in suite.questions])
+        elif vectors is not None:
+            raise ContractError("vectors are only allowed with supplied strategy")
 
     def inventory(self) -> dict[str, Any]:
         document_rows: list[dict[str, Any]] = []
@@ -152,7 +160,7 @@ class BenchmarkEngine:
             index = RetrievalIndex(
                 chunks,
                 strategy=self.suite.retrieval_strategy,
-                hybrid_weight=self.suite.hybrid_weight,
+                hybrid_weight=self.suite.hybrid_weight, vectors=self.vectors,
             )
             return index.manifest(
                 suite_sha256=self.suite.digest,
@@ -174,6 +182,65 @@ class BenchmarkEngine:
     def verify_index_manifest(self, manifest: dict[str, Any]) -> bool:
         return verify_manifest(manifest) and manifest.get("manifest_sha256") == self.index_manifest()["manifest_sha256"]
 
+    def search(self, query: str, *, limit: int | None = None) -> dict[str, Any]:
+        """Retrieve from the explicit suite and bind exact quotes to source text.
+
+        Scores order evidence; they are not calibrated answer confidence. The
+        caller's evaluation date is preserved and never replaced by today's date.
+        """
+        if not isinstance(query, str) or not query.strip() or len(query) > MAX_TEXT_CHARS:
+            raise ContractError(f"query must contain 1..{MAX_TEXT_CHARS} characters")
+        try:
+            query.encode("utf-8")
+        except UnicodeEncodeError as exc:
+            raise ContractError("query must be valid UTF-8 text") from exc
+        limit = self.suite.retrieval_k if limit is None else limit
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 20:
+            raise ContractError("search limit must be an integer from 1 to 20")
+        inventory = self.inventory()
+        valid = {
+            doc.source_id: doc for doc in self.suite.documents
+            if not doc.validation_errors(self.suite.evaluation_date)
+        }
+        chunks = self._index(valid)
+        index = RetrievalIndex(chunks, strategy=self.suite.retrieval_strategy,
+                               hybrid_weight=self.suite.hybrid_weight, vectors=self.vectors) if chunks else None
+        manifest = index.manifest(suite_sha256=self.suite.digest, chunk_size=self.suite.chunk_size,
+                                  chunk_overlap=self.suite.chunk_overlap) if index else self.index_manifest()
+        spans: dict[str, list[re.Match[str]]] = {}
+        hits = []
+        for row in index.rank(query, limit=limit) if index else ():
+            chunk = row.chunk
+            document = valid[chunk.source_id]
+            if chunk.source_id not in spans:
+                spans[chunk.source_id] = list(re.finditer(r"\S+", document.content))
+            words = spans[chunk.source_id]
+            first = chunk.ordinal * (self.suite.chunk_size - self.suite.chunk_overlap)
+            last = min(len(words), first + self.suite.chunk_size) - 1
+            start, end = words[first].start(), words[last].end()
+            quote = document.content[start:end]
+            if " ".join(quote.split()) != chunk.text:
+                raise ContractError("citation span does not match indexed chunk")
+            hits.append({
+                **chunk.to_dict(), "score": round(row.score, 6),
+                "lexical_score": round(row.lexical_score, 6), "vector_score": round(row.vector_score, 6),
+                "title": document.title, "source_url": document.source_url, "license": document.license,
+                "char_start": start, "char_end": end, "quote": quote,
+                "quote_sha256": content_sha256(quote), "offset_unit": "unicode_code_point",
+            })
+        return {
+            "schema_version": "rag-lab/search-v1", "status": "retrieved" if hits else "no_results",
+            "query": query, "limit": limit, "suite_sha256": self.suite.digest,
+            "evaluation_date": self.suite.evaluation_date.isoformat(),
+            "index_sha256": manifest["manifest_sha256"],
+            "strategy": self.suite.retrieval_strategy,
+            "score_kind": ("supplied_cosine_rank" if self.suite.hybrid_weight == 0 else "lexical_frequency_and_supplied_cosine_rank") if self.vectors else ("lexical_and_feature_hash_rank" if self.suite.retrieval_strategy == "hybrid" else "lexical_rank"),
+            "confidence": None, "quality": "not_measured", "embedding_model": self.vectors.metadata() if self.vectors else None,
+            "document_count": inventory["document_count"], "valid_document_count": len(valid),
+            "excluded": [row for row in inventory["documents"] if not row["valid"]],
+            "hits": hits,
+        }
+
     def run(self) -> dict[str, Any]:
         inventory = self.inventory()
         valid_documents = {
@@ -186,7 +253,7 @@ class BenchmarkEngine:
             RetrievalIndex(
                 chunks,
                 strategy=self.suite.retrieval_strategy,
-                hybrid_weight=self.suite.hybrid_weight,
+                hybrid_weight=self.suite.hybrid_weight, vectors=self.vectors,
             )
             if chunks
             else None

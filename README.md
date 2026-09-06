@@ -1,5 +1,19 @@
 # RAG Lab
 
+Use an explicit local file list through `workflow --intake --input-root` to
+replace the suite's inline documents with measured UTF-8 bytes. Paths, declared
+hashes, dates and replay are checked; no directories are scanned or sources
+deleted. See [File intake](docs/FILE-INTAKE.md) for the runnable example and limits.
+
+Explicit offline vectors are available through `workflow --vectors` when the
+suite selects `supplied`. The payload binds model/version, dimensions and exact
+chunk/query hashes; no model is called. See [Supplied vectors](docs/SUPPLIED-VECTORS.md)
+for the runnable example, signed ranking, refusal conditions and replay contract.
+
+The integrated workflow also accepts `--previous-suite` to bind exact corpus
+version changes to the same retrieval, quality and citation receipt. See
+[Integrated workflow](docs/INTEGRATED-WORKFLOW.md).
+
 RAG Lab is a dependency-free, offline evaluation laboratory for retrieval-augmented generation systems. It compares reproducible retrieval strategies, scores answer and ranking quality, records content-bound index manifests, sweeps bounded configurations, and produces verifiable JSON plus human-readable Markdown or HTML evidence.
 
 The proven `rag-quality-bench` engine remains the compatibility distribution and CLI. New integrations should use **RAG Lab** as the product identity, `import rag_lab` as the canonical Python namespace, and `rag-lab` as the canonical CLI.
@@ -9,6 +23,15 @@ The proven `rag-quality-bench` engine remains the compatibility distribution and
 It keeps the complete trace from source contract to chunk, retrieval rank, claim, citation, and verdict. Invalid, expired, blocked, future-dated, or hash-mismatched sources are rejected fail-closed. Individual failures remain visible instead of disappearing behind aggregate scores.
 
 ## Quick start
+
+For one complete corpus-to-evidence run, use an explicit suite and a new output directory:
+
+```bash
+rag-lab workflow --suite examples/suite.json --query "launch date" --output evidence-run-01
+rag-lab verify-workflow --suite examples/suite.json --output evidence-run-01
+```
+
+This performs real retrieval and records exact source quotes, a verified index, the annotated benchmark, and a receipt linking their hashes. The bundled adversarial example intentionally fails the default 100% benchmark gate: exit code 1 preserves those failures. It does not generate an answer or infer confidence for the free query. See [the integrated workflow](docs/INTEGRATED-WORKFLOW.md) for input, replay, and exit-code contracts.
 
 ```bash
 python -m pip install .
@@ -64,6 +87,7 @@ All strategies run locally with no model, service, embedding endpoint, or hidden
 
 Both `rag-lab` and the legacy `rag-quality-bench` expose the same command surface:
 
+- `workflow` / `verify-workflow`: run and replay the integrated corpus, search, citation, and quality path in a new evidence directory.
 - `validate`: validate the bounded versioned suite contract.
 - `inventory`: show freshness, trust, hash status, and duplicate content.
 - `run`: evaluate every question and optionally write an atomic verified report.
