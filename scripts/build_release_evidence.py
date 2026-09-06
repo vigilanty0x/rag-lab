@@ -9,7 +9,7 @@ import json
 import os
 from pathlib import Path
 import platform
-import sys
+
 import tomllib
 from typing import Any
 

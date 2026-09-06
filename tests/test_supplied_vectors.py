@@ -166,7 +166,7 @@ def test_real_scalar_limit_is_enforced_before_vectors_are_materialized():
 
 
 def test_validated_snapshot_cannot_change_with_input_or_forged_maps():
-    from rag_quality_bench.supplied_vectors import SuppliedVectors
+
     model,payload=vector_fixture(); engine=BenchmarkEngine(model,vectors=payload)
     before=engine.search('launch café a'); payload['chunks'][0]['vector']=[-1,0]
     assert engine.search('launch café a')==before
